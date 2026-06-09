@@ -1,0 +1,12 @@
+{
+    "version": "v1",
+    "model": "Logistic Regression",
+    "features": [
+        "home_form_points_last5",
+        "away_form_points_last5",
+        "home_goals_scored_last5",
+        "away_goals_scored_last5",
+        "neutral"
+    ],
+    "accuracy": 0.51
+}
