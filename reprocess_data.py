@@ -1,14 +1,16 @@
 import pandas as pd
 import numpy as np
 import os
+from pathlib import Path
+
+# Get script directory as base for all paths
+SCRIPT_DIR = Path(__file__).parent
 
 def reprocess():
-    print("Starting data reprocessing...")
-    
     # Load data
-    results = pd.read_csv('data/results.csv')
-    elo = pd.read_csv('data/elo_ratings.csv')
-    former_names = pd.read_csv('data/former_names.csv')
+    results = pd.read_csv(SCRIPT_DIR / 'data' / 'results.csv')
+    elo = pd.read_csv(SCRIPT_DIR / 'data' / 'elo_ratings.csv')
+    former_names = pd.read_csv(SCRIPT_DIR / 'data' / 'former_names.csv')
     
     # 1. Standardize Names
     # Create mapping: former -> current
@@ -21,7 +23,6 @@ def reprocess():
     results['away_team'] = results['away_team'].apply(standardize)
     elo['team'] = elo['team'].apply(standardize)
     
-    print(f"Standardized names. Czechia check: {len(results[results['home_team'] == 'Czechia'])} matches found.")
     
     # 2. Rolling Features (Expanded!)
     results['date'] = pd.to_datetime(results['date'])
@@ -187,11 +188,10 @@ def reprocess():
     results['result'] = results.apply(get_result, axis=1)
     
     # 4. Final Cleaning
-    print(f"Before cleaning missing Elo: {len(results)} rows")
     results = results[results['year'] >= 1901]
     results.dropna(subset=['home_elo', 'away_elo', 'result'], inplace=True)
     
-    results.to_csv('data/features_with_elo_v2.csv', index=False)
+    results.to_csv(SCRIPT_DIR / 'data' / 'features_with_elo_v2.csv', index=False)
     print(f"Reprocessing complete. Saved {len(results)} rows to data/features_with_elo_v2.csv!")
 
 if __name__ == "__main__":
