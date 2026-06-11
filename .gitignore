@@ -45,3 +45,22 @@ Thumbs.db
 # Environment variables
 .env
 .venv
+
+# FIFA 2026 Project Specific
+# Generated feature files (can recreate with reprocess_data.py)
+data/features*.csv
+
+# Trained models and scalers
+models/*.pkl
+
+# Generated content and visualizations
+content_posts/
+visualizations/
+visualizations_linkedin/
+
+# Temporary test files
+test_load.py
+main.py
+train_model_v4.py
+cleanup.py
+visualize_linkedin.py
