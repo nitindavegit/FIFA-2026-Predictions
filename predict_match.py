@@ -2,29 +2,36 @@ import pandas as pd
 import numpy as np
 import pickle
 import os
+from pathlib import Path
+from scipy.stats import poisson
+
+SCRIPT_DIR = Path(__file__).parent
 
 def load_resources():
-    """Load model, features list, and data."""
-    model_path = 'models/xgboost_v1.pkl'
-    features_path = 'models/features_list_v1.pkl'
-    data_path = 'data/features_with_elo_v2.csv'
+    """Load all models, features list, and data."""
+    resources = {
+        'win_model': SCRIPT_DIR / 'models' / 'xgboost_v1.pkl',
+        'xg_home': SCRIPT_DIR / 'models' / 'xg_home_model.pkl',
+        'xg_away': SCRIPT_DIR / 'models' / 'xg_away_model.pkl',
+        'features': SCRIPT_DIR / 'models' / 'features_list_v1.pkl',
+        'data': SCRIPT_DIR / 'data' / 'features_with_elo_v2.csv'
+    }
     
-    if not (os.path.exists(model_path) and os.path.exists(features_path)):
-        raise FileNotFoundError("Model or features list missing!")
-    
-    with open(model_path, 'rb') as f:
-        model = pickle.load(f)
-        
-    with open(features_path, 'rb') as f:
-        features = pickle.load(f)
-        
-    df = pd.read_csv(data_path)
-    return model, features, df
+    loaded = {}
+    for key, path in resources.items():
+        if key == 'data':
+            continue
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Missing resource: {path}")
+        with open(path, 'rb') as f:
+            loaded[key] = pickle.load(f)
+            
+    loaded['df'] = pd.read_csv(resources['data'])
+    return loaded
 
 def get_latest_team_features(df, team_name):
     """Get the most recent stats for the team."""
-    # Standardize team name
-    former_names = pd.read_csv('data/former_names.csv')
+    former_names = pd.read_csv(SCRIPT_DIR / 'data' / 'former_names.csv')
     name_map = dict(zip(former_names['former'], former_names['current']))
     std_team = name_map.get(team_name, team_name)
     
@@ -57,25 +64,39 @@ def get_latest_team_features(df, team_name):
             'gd': latest_match['away_goal_difference_last5']
         }
 
+def simulate_score(home_xg, away_xg):
+    """Find the most likely score using Poisson distribution."""
+    max_goals = 6
+    score_matrix = np.zeros((max_goals, max_goals))
+    
+    for i in range(max_goals):
+        for j in range(max_goals):
+            # Probability of home team scoring i goals AND away team scoring j goals
+            prob = poisson.pmf(i, home_xg) * poisson.pmf(j, away_xg)
+            score_matrix[i, j] = prob
+            
+    # Find the indices of the maximum probability
+    home_goals, away_goals = np.unravel_index(np.argmax(score_matrix), score_matrix.shape)
+    confidence = score_matrix[home_goals, away_goals]
+    
+    return home_goals, away_goals, confidence
+
 def predict_match(home_team_name, away_team_name, neutral=1):
-    """Predict outcome, using XGBoost model."""
+    """Predict outcome, xG, and final score."""
     try:
-        model, features, df = load_resources()
+        res = load_resources()
     except Exception as e:
         print(f"Error: {e}")
         return None
         
-    home_feats = get_latest_team_features(df, home_team_name)
-    away_feats = get_latest_team_features(df, away_team_name)
+    home_feats = get_latest_team_features(res['df'], home_team_name)
+    away_feats = get_latest_team_features(res['df'], away_team_name)
     
-    if not home_feats:
-        print(f"No data found for {home_team_name}")
-        return None
-    if not away_feats:
-        print(f"No data found for {away_team_name}")
+    if not home_feats or not away_feats:
+        print(f"No data found for {home_team_name} or {away_team_name}")
         return None
         
-    # Build feature vector!
+    # Build feature vector
     feature_row = {
         'home_elo': home_feats['elo'],
         'away_elo': away_feats['elo'],
@@ -96,21 +117,36 @@ def predict_match(home_team_name, away_team_name, neutral=1):
         'away_goal_difference_last5': away_feats['gd'],
         'neutral': neutral
     }
-    feature_df = pd.DataFrame([feature_row])
-    feature_df = feature_df[features]  # Ensure correct order!
+    feature_df = pd.DataFrame([feature_row])[res['features']]
     
-    probs = model.predict_proba(feature_df)[0]
+    # 1. Win/Draw/Loss Probabilities
+    win_probs = res['win_model'].predict_proba(feature_df)[0]
+    
+    # 2. Expected Goals (xG)
+    home_xg = res['xg_home'].predict(feature_df)[0]
+    away_xg = res['xg_away'].predict(feature_df)[0]
+    
+    # 3. Most Likely Score
+    h_score, a_score, score_conf = simulate_score(home_xg, away_xg)
+    
     print(f"\nMatch Prediction: {home_team_name} vs {away_team_name}")
     print(f"Location: {'Neutral' if neutral else home_team_name}")
-    print("-" * 45)
-    print(f"{home_team_name} Win: {probs[0]*100:.1f}%")
-    print(f"Draw: {probs[1]*100:.1f}%")
-    print(f"{away_team_name} Win: {probs[2]*100:.1f}%")
-    return probs
+    print("-" * 50)
+    print(f"Probabilities: {home_team_name} {win_probs[0]*100:.1f}% | Draw {win_probs[1]*100:.1f}% | {away_team_name} {win_probs[2]*100:.1f}%")
+    print(f"Expected Goals (xG): {home_team_name} {home_xg:.2f} - {away_xg:.2f} {away_team_name}")
+    print(f"Most Likely Score: {h_score} - {a_score} ({score_conf*100:.1f}% confidence)")
+    print("-" * 50)
+    
+    return {
+        'probs': win_probs,
+        'xg': (home_xg, away_xg),
+        'score': (h_score, a_score)
+    }
 
 if __name__ == "__main__":
     import sys
     if len(sys.argv) >= 3:
         predict_match(sys.argv[1], sys.argv[2])
     else:
-        predict_match("Spain", "Brazil")
+        # Test case for example 
+        predict_match("Germany", "France")
