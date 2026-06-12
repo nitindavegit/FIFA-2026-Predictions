@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚽ FIFA World Cup 2026 — AI Match Predictor
+# ⚽ FIFA World Cup 2026 — Match Predictor
 
 **An end-to-end machine learning pipeline** that predicts match outcomes, expected goals (xG), and most likely scores for the FIFA World Cup 2026 — with automated LinkedIn-ready visualizations for daily social sharing.
 
