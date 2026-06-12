@@ -102,13 +102,13 @@
 
 ### Outcome Probability Chart
 
-<img src="visualizations_linkedin/Canada_vs_Bosnia_and_Herzegovina_prob.png" alt="Outcome Probability Chart" width="80%" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+<img src="https://plain-apac-prod-public.komododecks.com/202606/12/1dNlF9g8yTVSZpxIXdRY/image.png" alt="Outcome Probability Chart" width="80%">
 
 <br>
 
 ### Score Distribution Heatmap
 
-<img src="visualizations_linkedin/Canada_vs_Bosnia_and_Herzegovina_score.png" alt="Score Distribution Heatmap" width="80%" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+<img src="https://plain-apac-prod-public.komododecks.com/202606/12/Ub4ACnyQBlAiXgvEXU8w/image.png" alt="Score Distribution Heatmap" width="80%">
 
 </div>
 
@@ -120,36 +120,16 @@
 
 ## 🧠 How It Works
 
-<div align="center">
+```mermaid
+flowchart LR
+    A["📄 Raw Data<br/>results.csv · elo ratings · former names"]
+    B["⚙️ Feature Engineering<br/>reprocess_data.py"]
+    C["🤖 Model Training<br/>train_improved_models.py<br/>train_xg_model.py"]
+    D["📝 Content Pipeline<br/>content_pipeline.py"]
+    E["📱 LinkedIn Visuals<br/>visualize_linkedin.py"]
 
-### Pipeline Architecture
-
-<br>
-
-<pre>
-
-    ┌──────────────┐       ┌──────────────────┐       ┌──────────────────┐
-    │  📄 Raw Data  │       │  ⚙️ Feature Eng.  │       │  🤖 ML Training   │
-    │  results.csv  │──────▶│  reprocess_data   │──────▶│  train_improved   │
-    │  elo ratings  │       │  .py              │       │  _models.py       │
-    │  former names │       │                   │       │  train_xg_model   │
-    └──────────────┘       └──────────────────┘       │  .py              │
-                                                       └────────┬─────────┘
-                                                                │
-</pre>
-
-<pre>
-
-    ┌──────────────────┐       ┌──────────────────┐             │
-    │  📱 LinkedIn      │       │  📝 Content       │             │
-    │  Visuals          │◀──────│  Pipeline         │◀────────────┘
-    │  *_prob.png       │       │  content_         │
-    │  *_score.png      │       │  pipeline.py      │
-    └──────────────────┘       └──────────────────┘
-
-</pre>
-
-</div>
+    A --> B --> C --> D --> E
+```
 
 <br>
 
