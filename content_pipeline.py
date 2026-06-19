@@ -13,9 +13,9 @@ def load_results():
 
 def generate_daily_post(date_str=None):
     if date_str is None:
-        # In our scenario today is June 11th 2026 (based on system date)
+        # In our scenario today is June 19th 2026 (based on system date)
         # We want to predict for the same day or next day matches
-        target_date = datetime.date(2026, 6, 17)
+        target_date = datetime.date(2026, 6, 19)
         date_str = target_date.strftime('%Y-%m-%d')
         
     results_df = load_results()
