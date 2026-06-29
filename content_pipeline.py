@@ -27,7 +27,7 @@ def generate_daily_post(date_str=None):
            
     post_content = []
     post_content.append(f"FIFA WORLD CUP 2026 PREDICTIONS - {date_str}")
-    post_content.append(f"AI-Powered Score Predictions (xG & Poisson Simulation)")
+    post_content.append(f"Score Predictions (xG & Poisson Simulation)")
     post_content.append("="*60)
     post_content.append("")
     
@@ -55,15 +55,26 @@ def generate_daily_post(date_str=None):
         post_content.append(f"Expected Goals (xG): {home} {home_xg:.2f} - {away_xg:.2f} {away}")
         post_content.append(f"Most Likely Score: {h_score} - {a_score}")
         
+        if 'shootout_probs' in prediction:
+            p_home_so, p_away_so = prediction['shootout_probs']
+            p_home_adv, p_away_adv = prediction['advance_probs']
+            post_content.append(f"Shootout Win Prob: {home} {p_home_so*100:.1f}% | {p_away_so*100:.1f}% {away}")
+            post_content.append(f"Overall Probability to Advance: {home} {p_home_adv*100:.1f}% | {p_away_adv*100:.1f}% {away}")
+            
         # Add a verdict
         if h_score > a_score:
             verdict = f"{home} is the favorite to win."
         elif a_score > h_score:
             verdict = f"{away} is the favorite to win."
         else:
-            verdict = "This looks like a very close draw."
+            if 'shootout_probs' in prediction:
+                p_home_so, p_away_so = prediction['shootout_probs']
+                fav_so = home if p_home_so > p_away_so else away
+                verdict = f"This looks like a very close draw, with {fav_so} favored to advance on penalties."
+            else:
+                verdict = "This looks like a very close draw."
             
-        post_content.append(f"AI Verdict: {verdict}")
+        post_content.append(f"Verdict: {verdict}")
         post_content.append("")
         
     final_post = "\n".join(post_content)

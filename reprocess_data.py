@@ -194,5 +194,96 @@ def reprocess():
     results.to_csv(SCRIPT_DIR / 'data' / 'features_with_elo_v2.csv', index=False)
     print(f"Reprocessing complete. Saved {len(results)} rows to data/features_with_elo_v2.csv!")
 
+    # 5. Reprocess Shootout Data
+    shootouts_path = SCRIPT_DIR / 'data' / 'shootouts.csv'
+    if shootouts_path.exists():
+        shootouts = pd.read_csv(shootouts_path)
+        shootouts['home_team'] = shootouts['home_team'].apply(standardize)
+        shootouts['away_team'] = shootouts['away_team'].apply(standardize)
+        shootouts['winner'] = shootouts['winner'].apply(standardize)
+        shootouts['date'] = pd.to_datetime(shootouts['date'])
+        shootouts = shootouts.sort_values('date').reset_index(drop=True)
+        
+        shootout_history = {} # team -> list of bool (True if win, False if loss)
+        
+        home_cum_wins = []
+        home_cum_plays = []
+        home_cum_rate = []
+        
+        away_cum_wins = []
+        away_cum_plays = []
+        away_cum_rate = []
+        
+        for idx, row in shootouts.iterrows():
+            home = row['home_team']
+            away = row['away_team']
+            winner = row['winner']
+            
+            if home not in shootout_history:
+                shootout_history[home] = []
+            if away not in shootout_history:
+                shootout_history[away] = []
+                
+            # Cumulative stats BEFORE this match
+            hw = sum(shootout_history[home])
+            hp = len(shootout_history[home])
+            hr = hw / hp if hp > 0 else 0.5
+            
+            aw = sum(shootout_history[away])
+            ap = len(shootout_history[away])
+            ar = aw / ap if ap > 0 else 0.5
+            
+            home_cum_wins.append(hw)
+            home_cum_plays.append(hp)
+            home_cum_rate.append(hr)
+            
+            away_cum_wins.append(aw)
+            away_cum_plays.append(ap)
+            away_cum_rate.append(ar)
+            
+            # Update history
+            shootout_history[home].append(winner == home)
+            shootout_history[away].append(winner == away)
+            
+        shootouts['home_shootout_wins'] = home_cum_wins
+        shootouts['home_shootout_plays'] = home_cum_plays
+        shootouts['home_shootout_rate'] = home_cum_rate
+        
+        shootouts['away_shootout_wins'] = away_cum_wins
+        shootouts['away_shootout_plays'] = away_cum_plays
+        shootouts['away_shootout_rate'] = away_cum_rate
+        
+        # Merge Elo ratings for shootout teams
+        shootouts['year'] = shootouts['date'].dt.year
+        shootouts = shootouts.merge(
+            elo[['year', 'team', 'rating']],
+            left_on=['year', 'home_team'],
+            right_on=['year', 'team'],
+            how='left'
+        )
+        shootouts.rename(columns={'rating': 'home_elo'}, inplace=True)
+        shootouts.drop('team', axis=1, inplace=True)
+        
+        shootouts = shootouts.merge(
+            elo[['year', 'team', 'rating']],
+            left_on=['year', 'away_team'],
+            right_on=['year', 'team'],
+            how='left'
+        )
+        shootouts.rename(columns={'rating': 'away_elo'}, inplace=True)
+        shootouts.drop('team', axis=1, inplace=True)
+        
+        # Fill missing Elos with a default value
+        shootouts['home_elo'] = shootouts['home_elo'].fillna(1500)
+        shootouts['away_elo'] = shootouts['away_elo'].fillna(1500)
+        shootouts['elo_difference'] = shootouts['home_elo'] - shootouts['away_elo']
+        
+        # Target label: 1 if home won, 0 if away won
+        shootouts['result'] = (shootouts['winner'] == shootouts['home_team']).astype(int)
+        
+        # Save processed shootout data
+        shootouts.to_csv(SCRIPT_DIR / 'data' / 'features_shootout.csv', index=False)
+        print(f"Processed shootouts. Saved {len(shootouts)} rows to data/features_shootout.csv!")
+
 if __name__ == "__main__":
     reprocess()
