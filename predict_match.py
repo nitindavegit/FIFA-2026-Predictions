@@ -159,8 +159,8 @@ def predict_match(home_team_name, away_team_name, neutral=1):
     # 3. Most Likely Score
     h_score, a_score, score_conf = simulate_score(home_xg, away_xg)
     
-    # 4. Shootout and advancement calculations if model is loaded
-    has_shootout = 'shootout_resources' in res
+    # 4. Shootout and advancement calculations if model is loaded AND predicted score is a draw
+    has_shootout = 'shootout_resources' in res and h_score == a_score
     p_home_so, p_away_so = 0.5, 0.5
     p_home_advance, p_away_advance = win_probs[0], win_probs[2]
     
