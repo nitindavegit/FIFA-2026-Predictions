@@ -13,8 +13,8 @@ def load_results():
 
 def generate_daily_post(date_str=None):
     if date_str is None:
-        # In our scenario today is July 2nd 2026 (based on system date)
-        target_date = datetime.date(2026, 7, 2)
+        # In our scenario today is July 4th 2026 (based on system date)
+        target_date = datetime.date(2026, 7, 4)
         date_str = target_date.strftime('%Y-%m-%d')
         
     results_df = load_results()
