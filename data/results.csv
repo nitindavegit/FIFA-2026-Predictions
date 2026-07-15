@@ -1,4 +1,4 @@
-date,home_team,away_team,home_score,away_score,tournament,city,country,neutral
+﻿date,home_team,away_team,home_score,away_score,tournament,city,country,neutral
 1872-11-30,Scotland,England,0,0,Friendly,Glasgow,Scotland,FALSE
 1873-03-08,England,Scotland,4,2,Friendly,London,England,FALSE
 1874-03-07,Scotland,England,2,1,Friendly,Glasgow,Scotland,FALSE
@@ -49405,5 +49405,5 @@ date,home_team,away_team,home_score,away_score,tournament,city,country,neutral
 2026-07-10,Spain,Belgium,2,1,FIFA World Cup,Inglewood,United States,TRUE
 2026-07-11,Norway,England,1,2,FIFA World Cup,Miami Gardens,United States,TRUE
 2026-07-11,Argentina,Switzerland,3,1,FIFA World Cup,Kansas City,United States,TRUE
-2026-07-14,France,Spain,NA,NA,FIFA World Cup,Arlington,United States,TRUE
+2026-07-14,France,Spain,0,2,FIFA World Cup,Arlington,United States,TRUE
 2026-07-15,England,Argentina,NA,NA,FIFA World Cup,Atlanta,United States,TRUE
